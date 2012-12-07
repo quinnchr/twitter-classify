@@ -1,6 +1,6 @@
 import tornado.ioloop
 import tornado.web
-import json 
+import json
 import classify
 import redis
 import time
@@ -31,7 +31,7 @@ class MainHandler(tornado.web.RequestHandler):
 		user_sentiment = self.get_argument('sentiment', False)
 		remaining = self.limit(user)
 		sentiment_key = {0: 'negative', 2: 'neutral', 4: 'positive'}
-		if text != '':	
+		if text != '':
 			if user_sentiment in ('positive', 'negative', 'neutral'):
 				self.learn(user, text, user_sentiment)
 				output = json.dumps({'ratelimit-remaining' : self.limit(user)})
@@ -51,7 +51,7 @@ class MainHandler(tornado.web.RequestHandler):
 		hash_key = md5.hexdigest()
 		db.hset('api:'+sentiment, hash_key, text)
 		db.zadd('api:'+user, time.time(), hash_key)
-	
+
 	def limit(self, user):
 		current_time = time.time()
 		# delete old requests
@@ -81,10 +81,10 @@ def f(x):
 
 if __name__ == "__main__":
 	print 'Initializing Support Vector Machine...'
-	svm = pickle.load(open('data/svm-reduced.pickle','r'))
+	svm = classify.SVM('data/training-samples.npy','data/training-classes.npy','data/training-vocabulary.npy')
 	pool = Pool(initializer=init,initargs=(svm,))
 	def classify(x):
-		return pool.apply(f,(x,)) 
+		return pool.apply(f,(x,))
 	print 'SVM Initialized'
 	db = redis.StrictRedis(host='localhost', port=6379, db=0)
 	application.listen(8000)
